@@ -19,18 +19,28 @@ print(type(program.render))
 # a_cl = cl.Buffer(clContext, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a_np)
 # b_cl = cl.Buffer(clContext, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b_np)
 
-pixels_cl = cl.Buffer(clContext, cl.mem_flags.WRITE_ONLY, 20 * 20 * 4 * 4)
-kernel = program.render  # Use this Kernel object for repeated calls
-kernel(clQueue, (20 * 20,), None, pixels_cl)
+resX = 40; resY = 20
 
-pixels_np = np.ndarray((20 * 20 * 4,), np.int32)
+# Numpy arrays
+res_np = np.ndarray((2,), np.int32); res_np[0] = resX; res_np[1] = resY
+
+# CL arrays
+pixels_cl = cl.Buffer(clContext, cl.mem_flags.WRITE_ONLY, resX * resY * 4 * 4)
+res_cl = cl.Buffer(clContext, cl.mem_flags.COPY_HOST_PTR, hostbuf=res_np)
+
+# Run the CL kernel
+kernel = program.render  # Use this Kernel object for repeated calls
+kernel(clQueue, (resX * resY,), None, pixels_cl, res_cl)
+
+# Numpy arrays from CL arrays
+pixels_np = np.ndarray((resX * resY * 4,), np.int32)
 cl.enqueue_copy(clQueue, pixels_np, pixels_cl)
 
 # print(pixels_np[0:4])
 
-for y in range(20):
-    for x in range(20):
-        i = (20 * y + x)
+for y in range(resY):
+    for x in range(resX):
+        i = (resX * y + x)
         r, g, b = pixels_np[4 * i:4 * i + 3]
         # print(r, g, b)
         print(ansi.graphics.setGraphicsMode(

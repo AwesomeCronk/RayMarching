@@ -1,13 +1,13 @@
 // Apply quaternion rotation to a vector point
 // A quaternion is basically a 4d number containing an angle and a 3d vector telling what angle it applies in. It's all just vector math!
-int quatTransform(float3 p, float4 q)
-{
-    
-}
+// int quatTransform(float3 p, float4 q)
+// {
+//     
+// }
 
 int sdfSphere(float3 rayPos)
 {
-    return sqrt(pown(rayPos.x, 2) + pown(rayPos.y, 2) + pown(rayPos.z, 2));
+    return sqrt(pown(rayPos.x, 2) + pown(rayPos.y, 2) + pown(rayPos.z, 2)) - 1.0f;
 }
 
 int sdfScene(float3 rayPos)
@@ -15,14 +15,13 @@ int sdfScene(float3 rayPos)
     return sdfSphere(rayPos);
 }
 
-__kernel void render(__global int3 *pixels)   // Add these back once it starts working: __global const int *objects, __global const float3 *positions, 
+__kernel void render(__global int3 *pixels, int2 res)
 {
-    int i = get_global_id(0);
+    int id = get_global_id(0);
 
-    // printf("render instance %d\n", i);
+    // printf("render instance %d\n", id);
 
-    int2 res = (int2)(20, 20);
-    int2 pix = (int2)(i % res.x, i / res.x);
+    int2 pix = (int2)(id % res.x, id / res.x);
     // One character in my terminal is 8px*17px
     // Floats because then rayDir is a float3 because C math is weird
     float scrWidth = res.x * 0.8f;
@@ -38,20 +37,31 @@ __kernel void render(__global int3 *pixels)   // Add these back once it starts w
     float3 rayDir = (float3)((pix.x - (res.x / 2)) * (scrWidth / res.x), focalLength, ((res.y / 2) - pix.y) * (scrHeight / res.y));
     rayDir /= sqrt(pown(rayDir.x, 2) + pown(rayDir.y, 2) + pown(rayDir.z, 2));
 
-    // float dst;
-    // for (i = 0; i < 100; i++)
-    // {
-    //     dst = sdfScene(rayPos);
-    //     if (dst < thres)
-    //     {
-    //         pixels[i] = (int3)(255, 255, 255);
-    //         break;
-    //     }
-    //     rayPos += rayDir * dst;
-    // }
-    // pixels[i] = (int3)(0, 0, 0);    // Default to black if the ray didn't collide with the scene
+    if (id == 210)
+    {
+        printf("id %d: rayDir=(%.3f, %.3f, %.3f) res=(%.3f, %.3f)\n", id, rayDir.x, rayDir.y, rayDir.z, res.x, res.y);
+    }
 
-    pixels[i] = (int3)((int)((float)(pix.x) / res.x * 256), (int)((float)(pix.y) / res.y * 256), i / (float)(res.x * res.y) * 256);
+    float dst;
+    int i;
+    pixels[id] = (int3)(0, 0, 0);    // Default to black if the ray didn't collide with the scene
+    for (i = 0; i < 100; i++)
+    {
+        dst = sdfScene(rayPos);
+        if (id == 210)
+        {
+            printf("id %d: dst=%.3f rayPos=(%.3f, %.3f, %.3f)\n", id, dst, rayPos.x, rayPos.y, rayPos.z);
+        }
+        if (dst < thres)
+        {
+            pixels[id] = (int3)(255, 255, 255);
+            // printf("id %d: collided\n", id);
+            break;
+        }
+        rayPos += rayDir * dst;
+    }
+
+    // pixels[id] = (int3)((int)((float)(pix.x) / res.x * 256), (int)((float)(pix.y) / res.y * 256), (int)(id / (float)(res.x * res.y) * 256));
 
     // How to raymarch in 1 easy step and 3 easy loop steps:
     // 1. Calculate ray begin position and direction
