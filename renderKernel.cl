@@ -7,7 +7,7 @@
 
 int sdfSphere(float3 rayPos)
 {
-    return sqrt(pown(rayPos.x, 2) + pown(rayPos.y, 2) + pown(rayPos.z, 2)) - 1.0f;
+    return sqrt(pown(rayPos.x, 2) + pown(rayPos.y, 2) + pown(rayPos.z, 2)) - 4.0f;
 }
 
 int sdfScene(float3 rayPos)
@@ -15,15 +15,16 @@ int sdfScene(float3 rayPos)
     return sdfSphere(rayPos);
 }
 
-__kernel void render(__global int3 *pixels, int2 res)
+__kernel void render(__global int3 *pixels, __global int2 *resBuf)
 {
     int id = get_global_id(0);
+    int2 res = resBuf[0];
 
     // printf("render instance %d\n", id);
-
+    // int2 res = (int2)(40, 20);
     int2 pix = (int2)(id % res.x, id / res.x);
     // One character in my terminal is 8px*17px
-    // Floats because then rayDir is a float3 because C math is weird
+    // Floats so that rayDir is a float3 because C math is weird
     float scrWidth = res.x * 0.8f;
     float scrHeight = res.y * 1.7f;
     float focalLength = 1.0f;
@@ -37,9 +38,9 @@ __kernel void render(__global int3 *pixels, int2 res)
     float3 rayDir = (float3)((pix.x - (res.x / 2)) * (scrWidth / res.x), focalLength, ((res.y / 2) - pix.y) * (scrHeight / res.y));
     rayDir /= sqrt(pown(rayDir.x, 2) + pown(rayDir.y, 2) + pown(rayDir.z, 2));
 
-    if (id == 210)
+    if (id == 10)
     {
-        printf("id %d: rayDir=(%.3f, %.3f, %.3f) res=(%.3f, %.3f)\n", id, rayDir.x, rayDir.y, rayDir.z, res.x, res.y);
+        printf("id %d: res=(%d, %d) rayDir=(%.3f, %.3f, %.3f)\n", id, res.x, res.y, rayDir.x, rayDir.y, rayDir.z);
     }
 
     float dst;

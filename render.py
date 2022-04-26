@@ -22,7 +22,8 @@ print(type(program.render))
 resX = 40; resY = 20
 
 # Numpy arrays
-res_np = np.ndarray((2,), np.int32); res_np[0] = resX; res_np[1] = resY
+res_np = np.ndarray((2,), np.int32)
+res_np[0] = resX; res_np[1] = resY
 
 # CL arrays
 pixels_cl = cl.Buffer(clContext, cl.mem_flags.WRITE_ONLY, resX * resY * 4 * 4)
@@ -37,6 +38,9 @@ pixels_np = np.ndarray((resX * resY * 4,), np.int32)
 cl.enqueue_copy(clQueue, pixels_np, pixels_cl)
 
 # print(pixels_np[0:4])
+print(res_np)
+cl.enqueue_copy(clQueue, res_np, res_cl)
+print(res_np)
 
 for y in range(resY):
     for x in range(resX):
